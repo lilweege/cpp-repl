@@ -30,7 +30,7 @@ def recompile(cflags, rargs, tempDir, lines):
     binExt = ".exe" if os.name == 'nt' else ""
     binFileName = os.path.join(tempDir.name, f"repl{binExt}")
 
-    compileResult = subprocess.run(["clang++", *cflags.split(), "-o", binFileName, srcFile.name])
+    compileResult = subprocess.run(["gcc", *cflags.split(), "-o", binFileName, srcFile.name])
     if compileResult.returncode != 0:
         return compileResult, None
 
@@ -61,14 +61,14 @@ def repl(args):
         try:
             color = "ansibrightgreen" if runError == 0 else "ansibrightred"
             basePromptText = f"[{len(lines)}]: "
-            prompText = "..." + " "*(len(basePromptText)-3) \
-                if line != "" else FormattedText([(color, basePromptText)])
+            multilinePrompt = "..." + " "*(len(basePromptText)-3)
+            prompText = multilinePrompt if line != "" else FormattedText([(color, basePromptText)])
             lastInput = session.prompt(prompText,
                 lexer=lexer,
                 style=style_from_pygments_cls(get_style_by_name("monokai")),
                 include_default_pygments_style=False,
                 multiline=isMultiline,
-                prompt_continuation=lambda width, lineNo, wrapCount: "... " if wrapCount == 0 else "",
+                prompt_continuation=lambda width, lineNo, wrapCount: multilinePrompt if wrapCount == 0 else "",
             )
         except KeyboardInterrupt:
             lastInput = ""
@@ -84,7 +84,7 @@ def repl(args):
             isMultiline = not isMultiline
             continue
 
-        if not lastInput:
+        if not lastInput and braceDiff == 0:
             print("")
             continue
 
